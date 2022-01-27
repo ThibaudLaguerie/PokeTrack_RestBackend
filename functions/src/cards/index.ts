@@ -71,20 +71,22 @@ router.get("/all", async (request, response) => {
 });
 
 router.post("/shop", async (request, response) => {
-  const {userId, cardId, price, soldeUser} = request.body;
+  const {userId, cardId, price, soldeUser, count} = request.body;
 
   usersCollection.doc(userId).get()
       .then((document) => {
-        if (soldeUser - price >= 0) {
-          const userData = document.data();
-          usersCollection.doc(userId).update({solde: soldeUser - price,
-            cards: [...userData?.cards, cardId]});
-          cardsCollection.doc(cardId).get()
-              .then((documentCard) => {
-                const cardData = documentCard.data();
-                cardsCollection.doc(cardId).update({sold: cardData?.sold + 1});
-              });
-        }
+        const userData = document.data();
+        usersCollection.doc(userId).update({solde: soldeUser - (price*count),
+          cards: [...userData?.cards, {
+            uid: cardId,
+            count,
+          }]});
+        cardsCollection.doc(cardId).get()
+            .then((documentCard) => {
+              const cardData = documentCard.data();
+              cardsCollection.doc(cardId)
+                  .update({sold: cardData?.sold + count});
+            });
       })
       .then(() => {
         if (soldeUser - price >= 0) {
