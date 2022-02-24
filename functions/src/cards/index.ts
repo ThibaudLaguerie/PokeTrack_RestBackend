@@ -52,7 +52,7 @@ const generateCards = async () => {
               weight: finalWeight, sprites, move1: moves[0],
               move2: moves[1], move3: moves[2], move4: moves[3], sex,
               price: Math.floor(price), nbGenerated, sold: 0, isShiny, level})
-            .then(() => setTimeout(() => generateCards(), 60000))
+            .then(() => setTimeout(() => generateCards(), 300000))
             .catch((error) => console.log("Firestore error => ", error));
       })
       .catch((error) => console.log("Fetch error => ", error));
@@ -111,7 +111,25 @@ router.get("/card/:cardId", async (request, response) => {
       .catch((error) => response.send({code: 3, error}));
 });
 
-generateCards();
+router.get("/stockexchange/value/:id", async (request, response) => {
+  const {id} = request.params;
+
+  cardsCollection.where("id", "==", parseInt(id)).get()
+      .then((document) => {
+        let somme = 0;
+        const cards = document.docs.map((card) => {
+          const cardTemp = card.data();
+          somme+= cardTemp.price;
+          return cardTemp;
+        });
+        response.status(200)
+            .send({value: (cards.length>0?somme/cards.length:0),
+              cards: cards, id: id});
+      })
+      .catch((error) => response.send({code: 3, error, value: 0}));
+});
+
+// generateCards();
 
 module.exports = router;
 export default router;
